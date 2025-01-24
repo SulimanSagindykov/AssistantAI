@@ -8,7 +8,7 @@ function App() {
 
     useEffect(() => {
         // WebSocket to the backend
-        wsRef.current = new WebSocket("ws://localhost:3001");
+        wsRef.current = new WebSocket("ws://localhost:3002");
 
         wsRef.current.onopen = () => {
             console.log("WebSocket connected to backend");
@@ -43,11 +43,11 @@ function App() {
     const handleToggleCall = async () => {
         if (!isCalling) {
             setIsCalling(true);
-            await axios.post("http://localhost:3001/start-call");
+            await axios.post("http://localhost:3002/start-call");
             console.log("Call started");
         } else {
             setIsCalling(false);
-            await axios.post("http://localhost:3001/stop-call");
+            await axios.post("http://localhost:3002/stop-call");
             console.log("Call stopped");
         }
     };

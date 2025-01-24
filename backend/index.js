@@ -10,7 +10,7 @@ import fetch from 'node-fetch';  // For making weather API calls
 dotenv.config();
 import cors from 'cors';
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 const API_KEY = process.env.OPENAI_API_KEY;
 const WEBSOCKET_URL = `wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17`;
 
@@ -222,7 +222,6 @@ wss.on('connection', (ws) => {
     micInputStream.on('data', (chunk) => {
         // Only send audio if the call is active
         if (!isCallActive) return;
-        console.log(`Sending audio chunk of size: ${chunk.length}`);
         openaiWs.send(JSON.stringify({
             event_id: `event_audio_${Date.now()}`,
             type: 'input_audio_buffer.append',
