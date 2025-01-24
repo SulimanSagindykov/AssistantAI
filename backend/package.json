@@ -1,0 +1,32 @@
+{
+  "name": "aiassistant",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "type": "module",
+  "dependencies": {
+    "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
+    "axios": "^1.7.9",
+    "cookie-parser": "~1.4.4",
+    "cors": "^2.8.5",
+    "debug": "~2.6.9",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "http-errors": "~1.6.3",
+    "mic": "^2.1.2",
+    "morgan": "~1.9.1",
+    "node-fetch": "^3.3.2",
+    "node-record-lpcm16": "^1.0.1",
+    "pug": "^3.0.3",
+    "speaker": "^0.5.5",
+    "uuid": "^11.0.5",
+    "ws": "^8.18.0"
+  },
+  "main": "app.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

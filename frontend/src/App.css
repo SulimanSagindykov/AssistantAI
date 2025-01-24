@@ -1,0 +1,49 @@
+.app-container {
+  font-family: "Roboto", sans-serif;
+  text-align: center;
+  margin-top: 60px;
+}
+
+header h1 {
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #333;
+}
+
+.info-section {
+  display: inline-block;
+  padding: 20px 40px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.info-section p {
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+.btn {
+  font-size: 1.1rem;
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.start-btn {
+  background-color: #0a8754;
+  color: #fff;
+}
+.start-btn:hover {
+  background-color: #0d9960;
+}
+
+.stop-btn {
+  background-color: #d12f19;
+  color: #fff;
+}
+.stop-btn:hover {
+  background-color: #e33a23;
+}
