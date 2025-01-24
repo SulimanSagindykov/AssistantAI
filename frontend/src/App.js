@@ -61,7 +61,7 @@ function App() {
                 <div className="info-section">
                     <p>
                         {isCalling
-                            ? "Recording from server mic... Speak for ~1s, then press Stop."
+                            ? "Recording from server mic... Speak for at least ~1s"
                             : "Press 'Start' to begin a real-time audio conversation."}
                     </p>
                     <button
