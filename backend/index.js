@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import mic from 'mic';
 import Speaker from 'speaker';
 import { Readable } from 'stream';
-import fs from 'fs';
 import http from 'http';
 import fetch from 'node-fetch';  // For making weather API calls
 
@@ -13,24 +12,19 @@ import cors from 'cors';
 
 const PORT = process.env.PORT || 3001;
 const API_KEY = process.env.OPENAI_API_KEY;
-// The Open-Meteo API is free and open. No API key needed, so we do NOT require an OPENWEATHER_API_KEY here.
-
 const WEBSOCKET_URL = `wss://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17`;
 
-// Create Express app
+// Express app
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Simple in-memory flag to track "call" status
 let isCallActive = false;
 
-// Root endpoint - just a quick check
 app.get('/', (req, res) => {
     res.send('Backend is running');
 });
 
-// Start call endpoint
 app.post('/start-call', (req, res) => {
     if (!isCallActive) {
         isCallActive = true;
@@ -39,7 +33,6 @@ app.post('/start-call', (req, res) => {
     res.sendStatus(200);
 });
 
-// Stop call endpoint
 app.post('/stop-call', (req, res) => {
     if (isCallActive) {
         isCallActive = false;
@@ -48,13 +41,13 @@ app.post('/stop-call', (req, res) => {
     res.sendStatus(200);
 });
 
-// Create an HTTP server from Express for the WebSocket
+// HTTP server from Express for the WebSocket
 const server = http.createServer(app);
 
-// Initialize the WebSocket server that the client (React app) will connect to
+// WebSocket server that React app connects to
 const wss = new WebSocketServer({ server });
 
-// WebSocket server event: On each new connection from the frontend
+// On each new connection from the frontend
 wss.on('connection', (ws) => {
     console.log('Frontend client connected to backend WebSocket');
 
@@ -66,7 +59,6 @@ wss.on('connection', (ws) => {
         }
     });
 
-    // Setup microphone
     const micInstance = mic({
         rate: '24000',
         channels: '1',
@@ -74,20 +66,14 @@ wss.on('connection', (ws) => {
     });
     const micInputStream = micInstance.getAudioStream();
 
-    // Audio playback
     let speakerStream = null;
     let isPlaying = false;
     let audioQueue = [];
-
-    // Response state
     let isResponding = false;
     let currentResponseId = null;
     let currentItemId = null;
     let audioPlaybackDuration = 0;
 
-    // ============================
-    // 1) OPENAI WS Event Handlers
-    // ============================
 
     openaiWs.on('open', () => {
         console.log('Connected to OpenAI Realtime API');
@@ -109,9 +95,7 @@ wss.on('connection', (ws) => {
         ws.close();
     });
 
-    // ========================
-    // 2) Setup Realtime Session
-    // ========================
+    // Realtime Session
     function setupSession() {
         const sessionConfig = {
             event_id: 'event_setup_session',
@@ -137,9 +121,6 @@ wss.on('connection', (ws) => {
         openaiWs.send(JSON.stringify(sessionConfig));
     }
 
-    // =======================
-    // 3) Handle Realtime Events
-    // =======================
     function handleServerEvent(event, clientWs) {
         switch (event.type) {
             case 'session.created':
@@ -179,7 +160,7 @@ wss.on('connection', (ws) => {
                 startListening();
                 break;
             case 'conversation.item.input_audio_transcription.completed':
-                // The user’s audio was transcribed here:
+                // The user’s audio is transcribed here
                 console.log('User audio transcription completed:', event.transcript);
                 clientWs.send(JSON.stringify({
                     type: 'conversation.item.input_audio_transcription.completed',
@@ -223,9 +204,6 @@ wss.on('connection', (ws) => {
         }
     }
 
-    // ========================
-    // 4) Start/Stop Listening
-    // ========================
     function startListening() {
         // Only start mic if call is active
         if (!isCallActive) {
@@ -241,9 +219,6 @@ wss.on('connection', (ws) => {
         micInstance.stop();
     }
 
-    // =========================
-    // 5) Microphone Input
-    // =========================
     micInputStream.on('data', (chunk) => {
         // Only send audio if the call is active
         if (!isCallActive) return;
@@ -255,9 +230,7 @@ wss.on('connection', (ws) => {
         }));
     });
 
-    // =========================
-    // 6) Audio Playback
-    // =========================
+    // Audio Playback
     function queueAudioDelta(base64Audio) {
         audioQueue.push(Buffer.from(base64Audio, 'base64'));
         if (!isPlaying) {
@@ -302,9 +275,7 @@ wss.on('connection', (ws) => {
         });
     }
 
-    // =========================
-    // 7) Interruption Handling
-    // =========================
+    // Interruption Handling
     function handleInterruption() {
         console.log('Interruption detected');
 
@@ -322,7 +293,6 @@ wss.on('connection', (ws) => {
             type: 'response.cancel'
         }));
 
-        // Truncate the conversation item if still responding
         if (currentItemId) {
             openaiWs.send(JSON.stringify({
                 event_id: `event_truncate_${Date.now()}`,
@@ -339,20 +309,15 @@ wss.on('connection', (ws) => {
         audioPlaybackDuration = 0;
     }
 
-    // ==============================
-    // 8) Weather Query Handling
-    // ==============================
     async function handlePotentialWeatherQuery(transcript) {
         // Very simple check for "weather in ...", or "weather at ..."
-        // For production, you might need more robust parsing
         const match = transcript.match(/weather (?:in|at) ([A-Za-z\s]+)/i);
         if (match) {
             const city = match[1].trim();
             const weatherData = await fetchOpenMeteoWeather(city);
             console.log('Fetched weather data for:', city, weatherData);
 
-            // Now tell GPT we have some "knowledge" about the weather in that city
-            // We do this by sending a "conversation.item.add" event with the data
+            // Telling GPT we have some "knowledge" about the weather in that city
             const weatherMessage = formatWeatherMessage(weatherData, city);
 
             openaiWs.send(JSON.stringify({
@@ -366,7 +331,6 @@ wss.on('connection', (ws) => {
         }
     }
 
-    // 8a) Geocoding + Current Weather from Open-Meteo
     async function fetchOpenMeteoWeather(city) {
         try {
             // 1) Geocode city -> lat/long
@@ -381,8 +345,7 @@ wss.on('connection', (ws) => {
             }
             const { latitude, longitude } = geoData.results[0];
 
-            // 2) Fetch current weather
-            // Open-Meteo uses metric (Celsius) by default
+            // Fetch current weather
             const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`;
             const weatherRes = await fetch(weatherUrl);
             if (!weatherRes.ok) {
@@ -396,7 +359,7 @@ wss.on('connection', (ws) => {
         }
     }
 
-    // 8b) Format the weather data as a system message for GPT
+    // Format the weather data as a system message for GPT
     function formatWeatherMessage(weatherData, city) {
         if (weatherData.error) {
             return `Weather data error: ${weatherData.error}`;
@@ -407,7 +370,6 @@ wss.on('connection', (ws) => {
         }
         const { temperature, windspeed, weathercode, time } = current_weather;
 
-        // Simple text for user reference
         return `Open-Meteo weather data for ${city}:
 - Temperature: ${temperature} °C
 - Wind Speed: ${windspeed} km/h
@@ -416,9 +378,7 @@ wss.on('connection', (ws) => {
 (Use this info if the user asked about it.)`;
     }
 
-    // =========================
-    // 9) Client Disconnection
-    // =========================
+    // Client Disconnection
     ws.on('close', () => {
         console.log('Frontend client disconnected');
         micInstance.stop();
@@ -430,9 +390,7 @@ wss.on('connection', (ws) => {
         }
     });
 
-    // =========================
-    // 10) Process Termination
-    // =========================
+    // Process Termination
     process.on('SIGINT', () => {
         console.log('Shutting down...');
         wss.clients.forEach((client) => {

@@ -7,7 +7,7 @@ function App() {
     const wsRef = useRef(null);
 
     useEffect(() => {
-        // Create a WebSocket to the backend once
+        // WebSocket to the backend
         wsRef.current = new WebSocket("ws://localhost:3001");
 
         wsRef.current.onopen = () => {
@@ -26,7 +26,6 @@ function App() {
             } else if (data.type === "response.text.delta") {
                 console.log("AI partial text delta:", data.delta);
             }
-            // Add more logic if you want to display messages on screen, etc.
         };
 
         wsRef.current.onclose = () => {
@@ -34,7 +33,7 @@ function App() {
         };
 
         return () => {
-            // Cleanup on unmount
+            // Cleanup
             if (wsRef.current) {
                 wsRef.current.close();
             }
